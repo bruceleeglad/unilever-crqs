@@ -12,7 +12,6 @@ export const getStoredOrders = (): ProductionOrder[] => {
       return [];
     }
     const parsed: ProductionOrder[] = JSON.parse(raw);
-    // Filtrer den oprindelige mock demo-ordre ud hvis den ligger i browseren
     const cleaned = parsed.filter(o => o.id !== 'ord-101');
     if (cleaned.length !== parsed.length) {
       localStorage.setItem(ORDERS_KEY, JSON.stringify(cleaned));
@@ -24,9 +23,50 @@ export const getStoredOrders = (): ProductionOrder[] => {
   }
 };
 
+// Hent de seneste ordrer fra Vercel skyen (så chefen ser iPad'ens ændringer)
+export const fetchCloudOrders = async (): Promise<ProductionOrder[]> => {
+  try {
+    const res = await fetch('/api/orders');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.orders)) {
+        const cloudOrders: ProductionOrder[] = data.orders.filter((o: any) => o.id !== 'ord-101');
+        const local = getStoredOrders();
+        
+        // Hvis skyen har data eller er nyere, flet / opdater lokalt lager
+        if (cloudOrders.length > 0) {
+          localStorage.setItem(ORDERS_KEY, JSON.stringify(cloudOrders));
+          return cloudOrders;
+        } else if (local.length > 0) {
+          // Send lokale ordrer op i skyen
+          await syncOrdersToCloud(local);
+          return local;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Cloud sync offline or unavailable, using local cache:', e);
+  }
+  return getStoredOrders();
+};
+
+export const syncOrdersToCloud = async (orders: ProductionOrder[]) => {
+  try {
+    await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ orders })
+    });
+  } catch (e) {
+    console.warn('Failed to sync orders to cloud:', e);
+  }
+};
+
 export const saveOrders = (orders: ProductionOrder[]) => {
   try {
     localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+    // Synkroniser automatisk til skyen i baggrunden
+    syncOrdersToCloud(orders);
   } catch (e) {
     console.error('Failed to save orders', e);
   }

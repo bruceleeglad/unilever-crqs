@@ -1,30 +1,55 @@
 import React, { useState, useEffect } from 'react';
 import { ProductionOrder } from './types/crqs';
-import { getStoredOrders, getActiveOrderId, saveOrders, setActiveOrderId } from './services/storage';
+import { getStoredOrders, getActiveOrderId, saveOrders, setActiveOrderId, fetchCloudOrders } from './services/storage';
 import { LineClearanceForm } from './components/LineClearanceForm';
 import { ActiveOrderView } from './components/ActiveOrderView';
 import { ManagementDashboard } from './components/ManagementDashboard';
-import { Tablet, LayoutDashboard, Plus, Factory, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Tablet, LayoutDashboard, Plus, Factory, CheckCircle2, ShieldCheck, RefreshCw } from 'lucide-react';
 
 export function App() {
   const [orders, setOrders] = useState<ProductionOrder[]>([]);
   const [activeOrderId, setActiveId] = useState<string | null>(null);
   const [currentView, setCurrentView] = useState<'operator' | 'management'>('operator');
   const [isCreatingNew, setIsCreatingNew] = useState<boolean>(false);
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
+  // Indlæs data og synkroniser med skyen
   useEffect(() => {
-    const loaded = getStoredOrders();
-    setOrders(loaded);
+    // Først hurtig visning fra lokalt lager
+    const local = getStoredOrders();
+    setOrders(local);
     const active = getActiveOrderId();
-    setActiveId(active);
-    if (!active) {
-      // Find den første aktive hvis en findes
-      const firstActive = loaded.find(o => o.status === 'active');
-      if (firstActive) {
-        setActiveId(firstActive.id);
-        setActiveOrderId(firstActive.id);
+    if (active) setActiveId(active);
+
+    // Hent derefter fra skyen (Vercel)
+    const loadFromCloud = async () => {
+      setIsSyncing(true);
+      const cloudData = await fetchCloudOrders();
+      setOrders(cloudData);
+      const curActive = getActiveOrderId();
+      if (!curActive) {
+        const firstActive = cloudData.find(o => o.status === 'active');
+        if (firstActive) {
+          setActiveId(firstActive.id);
+          setActiveOrderId(firstActive.id);
+        }
+      } else {
+        setActiveId(curActive);
       }
-    }
+      setIsSyncing(false);
+    };
+
+    loadFromCloud();
+
+    // Polling hvert 5. sekund så chefens skærm opdaterer automatisk når operatøren gemmer et tjek
+    const pollInterval = setInterval(async () => {
+      const cloudData = await fetchCloudOrders();
+      if (cloudData && cloudData.length > 0) {
+        setOrders(cloudData);
+      }
+    }, 5000);
+
+    return () => clearInterval(pollInterval);
   }, []);
 
   const activeOrder = orders.find(o => o.id === activeOrderId);
@@ -100,6 +125,12 @@ export function App() {
             <span className="hidden sm:inline">Chefer & Audit</span>
             <span className="sm:hidden">Dashboard</span>
           </button>
+        </div>
+
+        {/* Cloud Sync Status Indicator */}
+        <div className="hidden lg:flex items-center gap-2 text-[11px] text-slate-400 bg-slate-800/40 px-3 py-1 rounded-full border border-slate-700/60">
+          <span className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-amber-400 animate-spin' : 'bg-emerald-400'}`} />
+          <span>{isSyncing ? 'Synkroniserer...' : 'Cloud Live (Delt Database)'}</span>
         </div>
       </header>
 
