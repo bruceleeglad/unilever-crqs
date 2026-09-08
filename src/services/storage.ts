@@ -3,84 +3,24 @@ import { ProductionOrder, CrqsCheck } from '../types/crqs';
 const ORDERS_KEY = 'unilever_crqs_orders_v1';
 const ACTIVE_ORDER_ID_KEY = 'unilever_crqs_active_order_id';
 
-const INITIAL_ORDERS: ProductionOrder[] = [
-  {
-    id: 'ord-101',
-    createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-    status: 'active',
-    line: 'Sif (L2)',
-    leaktestBottles: 0,
-    lineCleared: true,
-    cleanMatrixUsed: true,
-    liquidCheckConfirmed: true,
-    orderNumber: '849201',
-    mrdrProduct: '67890123',
-    mrdrFrontLabel: '201948',
-    mrdrBackLabel: '201949',
-    mrdrCartonTray: '40192',
-    mrdrBottles: '50182',
-    mrdrLiquid: '10928',
-    tankNumber: 'L2A',
-    signature1: { name: 'Thomas', timestamp: new Date(Date.now() - 3600000 * 2).toISOString() },
-    signature2: { name: 'Hoang', timestamp: new Date(Date.now() - 3600000 * 2).toISOString() },
-    checks: [
-      {
-        id: 'chk-1',
-        checkNumber: 1,
-        timestamp: new Date(Date.now() - 3600000 * 1.5).toISOString(),
-        timeFormatted: '04:00',
-        foretiket: 'green',
-        bagetiket: 'green',
-        kapsel: 'green',
-        flaske: 'green',
-        datokode: 'green',
-        karton: 'green',
-        comment: 'Opstart fejlfri. Etiketter lige.',
-        photoUrl: '/unilever-guide.jpg'
-      },
-      {
-        id: 'chk-2',
-        checkNumber: 2,
-        timestamp: new Date(Date.now() - 3600000 * 1).toISOString(),
-        timeFormatted: '04:20',
-        foretiket: 'green',
-        bagetiket: 'yellow',
-        kapsel: 'green',
-        flaske: 'green',
-        datokode: 'green',
-        karton: 'green',
-        comment: 'Lille skævhed på bagetiket justeret på rullen.',
-        photoUrl: '/unilever-guide.jpg'
-      },
-      {
-        id: 'chk-3',
-        checkNumber: 3,
-        timestamp: new Date(Date.now() - 3600000 * 0.5).toISOString(),
-        timeFormatted: '04:40',
-        foretiket: 'green',
-        bagetiket: 'green',
-        kapsel: 'green',
-        flaske: 'green',
-        datokode: 'green',
-        karton: 'green',
-        comment: 'Perfekt.',
-        photoUrl: '/unilever-guide.jpg'
-      }
-    ]
-  }
-];
+const INITIAL_ORDERS: ProductionOrder[] = [];
 
 export const getStoredOrders = (): ProductionOrder[] => {
   try {
     const raw = localStorage.getItem(ORDERS_KEY);
     if (!raw) {
-      localStorage.setItem(ORDERS_KEY, JSON.stringify(INITIAL_ORDERS));
-      return INITIAL_ORDERS;
+      return [];
     }
-    return JSON.parse(raw);
+    const parsed: ProductionOrder[] = JSON.parse(raw);
+    // Filtrer den oprindelige mock demo-ordre ud hvis den ligger i browseren
+    const cleaned = parsed.filter(o => o.id !== 'ord-101');
+    if (cleaned.length !== parsed.length) {
+      localStorage.setItem(ORDERS_KEY, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch (e) {
     console.error('Failed to load orders', e);
-    return INITIAL_ORDERS;
+    return [];
   }
 };
 
@@ -93,11 +33,16 @@ export const saveOrders = (orders: ProductionOrder[]) => {
 };
 
 export const getActiveOrderId = (): string | null => {
-  return localStorage.getItem(ACTIVE_ORDER_ID_KEY) || (INITIAL_ORDERS[0] ? INITIAL_ORDERS[0].id : null);
+  const stored = localStorage.getItem(ACTIVE_ORDER_ID_KEY);
+  if (stored === 'ord-101') {
+    localStorage.removeItem(ACTIVE_ORDER_ID_KEY);
+    return null;
+  }
+  return stored;
 };
 
 export const setActiveOrderId = (id: string | null) => {
-  if (id) {
+  if (id && id !== 'ord-101') {
     localStorage.setItem(ACTIVE_ORDER_ID_KEY, id);
   } else {
     localStorage.removeItem(ACTIVE_ORDER_ID_KEY);
