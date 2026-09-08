@@ -131,12 +131,12 @@ export function App() {
       <footer className="bg-slate-900 border-t border-slate-800/80 py-4 px-6 text-center text-xs text-slate-500 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          <span>Unilever Production Quality System • Klar til Vercel deployment</span>
+          <span>Unilever Production Quality System • Live på Vercel</span>
         </div>
         <div className="flex items-center gap-3">
           <span>Linjer: Thor (L1), Sif (L2), Loke (L5)</span>
           <span>•</span>
-          <span>Autosave tilsluttet</span>
+          <span className="text-emerald-400 font-medium">Autosave aktiv</span>
         </div>
       </footer>
 
