@@ -84,7 +84,25 @@ export const saveOrders = (orders: ProductionOrder[]) => {
     // Synkroniser automatisk til skyen i baggrunden
     syncOrdersToCloud(orders);
   } catch (e) {
-    console.error('Failed to save orders', e);
+    console.warn('LocalStorage save failed, attempting quota cleanup:', e);
+    try {
+      // Hvis localStorage er fyldt op (typisk pga. mange base64 billeder på iPad),
+      // rens store base64-strenge fra ældre tjek så appen aldrig crasher!
+      const sanitizedOrders = orders.map(order => ({
+        ...order,
+        checks: (order.checks || []).map((chk, idx) => {
+          // Behold det nyeste tjek som det er, men erstat store base64 på ældre checks
+          if (idx > 2 && chk.photoUrl && chk.photoUrl.startsWith('data:image')) {
+            return { ...chk, photoUrl: '/unilever-guide.jpg' };
+          }
+          return chk;
+        })
+      }));
+      localStorage.setItem(ORDERS_KEY, JSON.stringify(sanitizedOrders));
+      syncOrdersToCloud(sanitizedOrders);
+    } catch (retryError) {
+      console.error('Fatal LocalStorage save error:', retryError);
+    }
   }
 };
 

@@ -43,17 +43,22 @@ export const CheckModal: React.FC<Props> = ({ checkNumber, onSave, onClose }) =>
       const img = new Image();
       img.onload = async () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 1280;
-        const scaleSize = MAX_WIDTH / img.width;
-        const w = img.width > MAX_WIDTH ? MAX_WIDTH : img.width;
-        const h = img.width > MAX_WIDTH ? img.height * scaleSize : img.height;
+        const MAX_WIDTH = 800; // Letvægt for iPad Safari hukommelse og hurtig gem
+        const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
         
         canvas.width = w;
         canvas.height = h;
         const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, w, h);
+        if (ctx) {
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'medium';
+          ctx.drawImage(img, 0, 0, w, h);
+        }
         
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+        // Komprimer til skånsom JPEG (ca. 40-70 KB i stedet for flere hundrede KB)
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.65);
         setPhotoPreview(compressedBase64);
         setPhotoUrl(compressedBase64);
 
@@ -76,12 +81,18 @@ export const CheckModal: React.FC<Props> = ({ checkNumber, onSave, onClose }) =>
             }
           }
         } catch (err) {
-          console.warn('Billed-upload via /api/upload fejlede, fallbacker:', err);
+          console.warn('Billed-upload via /api/upload fejlede, fallbacker til lokal:', err);
         } finally {
           setIsUploadingPhoto(false);
         }
       };
+      img.onerror = () => {
+        setIsUploadingPhoto(false);
+      };
       img.src = event.target?.result as string;
+    };
+    reader.onerror = () => {
+      setIsUploadingPhoto(false);
     };
     reader.readAsDataURL(file);
   };
@@ -302,10 +313,24 @@ export const CheckModal: React.FC<Props> = ({ checkNumber, onSave, onClose }) =>
           </button>
           <button
             type="button"
+            disabled={isUploadingPhoto}
             onClick={handleSave}
-            className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold px-7 py-3.5 rounded-xl shadow-lg shadow-emerald-600/30 text-base transition-all"
+            className={`flex items-center gap-2 font-bold px-7 py-3.5 rounded-xl shadow-lg text-base transition-all ${
+              isUploadingPhoto
+                ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white shadow-emerald-600/30'
+            }`}
           >
-            <Check className="w-5 h-5" /> Gem Tjek #{checkNumber}
+            {isUploadingPhoto ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Uploader foto...</span>
+              </>
+            ) : (
+              <>
+                <Check className="w-5 h-5" /> Gem Tjek #{checkNumber}
+              </>
+            )}
           </button>
         </div>
 
