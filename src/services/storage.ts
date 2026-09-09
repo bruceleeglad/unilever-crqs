@@ -78,30 +78,44 @@ export const syncOrdersToCloud = async (orders: ProductionOrder[]) => {
   }
 };
 
+// Hjælpefunktion: strip enorme base64 data-strenge fra tjek, så localStorage aldrig sprænges på iPad
+const sanitizeOrdersForLocalStorage = (orders: ProductionOrder[]): ProductionOrder[] => {
+  return orders.map(order => ({
+    ...order,
+    checks: (order.checks || []).map((chk, idx) => {
+      // Hvis et billede er en rå base64 og ikke er det absolut nyeste tjek, eller hvis det er ældre,
+      // erstattes det med placeholder eller sky-url så hukommelsen holdes minimal.
+      if (chk.photoUrl && chk.photoUrl.startsWith('data:image')) {
+        if (idx > 0) {
+          return { ...chk, photoUrl: '/unilever-guide.jpg' };
+        }
+      }
+      return chk;
+    })
+  }));
+};
+
 export const saveOrders = (orders: ProductionOrder[]) => {
+  // Synkroniser altid de fulde ordrer til skyen i baggrunden
+  syncOrdersToCloud(orders);
+
   try {
-    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-    // Synkroniser automatisk til skyen i baggrunden
-    syncOrdersToCloud(orders);
+    const sanitized = sanitizeOrdersForLocalStorage(orders);
+    localStorage.setItem(ORDERS_KEY, JSON.stringify(sanitized));
   } catch (e) {
-    console.warn('LocalStorage save failed, attempting quota cleanup:', e);
+    console.warn('LocalStorage save failed, applying aggressive cleanup:', e);
     try {
-      // Hvis localStorage er fyldt op (typisk pga. mange base64 billeder på iPad),
-      // rens store base64-strenge fra ældre tjek så appen aldrig crasher!
-      const sanitizedOrders = orders.map(order => ({
+      // Ekstrem oprydning hvis kvoten er nået: fjern alle base64 billeder fra localStorage
+      const ultraClean = orders.map(order => ({
         ...order,
-        checks: (order.checks || []).map((chk, idx) => {
-          // Behold det nyeste tjek som det er, men erstat store base64 på ældre checks
-          if (idx > 2 && chk.photoUrl && chk.photoUrl.startsWith('data:image')) {
-            return { ...chk, photoUrl: '/unilever-guide.jpg' };
-          }
-          return chk;
-        })
+        checks: (order.checks || []).map(chk => ({
+          ...chk,
+          photoUrl: chk.photoUrl?.startsWith('http') ? chk.photoUrl : '/unilever-guide.jpg'
+        }))
       }));
-      localStorage.setItem(ORDERS_KEY, JSON.stringify(sanitizedOrders));
-      syncOrdersToCloud(sanitizedOrders);
+      localStorage.setItem(ORDERS_KEY, JSON.stringify(ultraClean));
     } catch (retryError) {
-      console.error('Fatal LocalStorage save error:', retryError);
+      console.warn('LocalStorage unavailable or full, operating in-memory:', retryError);
     }
   }
 };

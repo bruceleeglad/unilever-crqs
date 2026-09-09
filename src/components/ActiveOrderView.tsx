@@ -49,11 +49,16 @@ export const ActiveOrderView: React.FC<Props> = ({
   }, [order]);
 
   const handleSaveCheck = (checkData: any) => {
-    const updated = addCheckToOrder(order.id, checkData);
-    if (updated) {
-      onOrderUpdated(updated);
+    try {
+      const updated = addCheckToOrder(order.id, checkData);
+      if (updated) {
+        onOrderUpdated(updated);
+      }
+    } catch (err) {
+      console.error('Fejl ved gem tjek:', err);
+    } finally {
+      setShowCheckModal(false);
     }
-    setShowCheckModal(false);
   };
 
   const getStatusBadge = (rating: QualityRating) => {
