@@ -194,15 +194,15 @@ export const CheckModal: React.FC<Props> = ({ checkNumber, onSave, onClose }) =>
         {/* Content Body */}
         <div className="p-4 md:p-6 space-y-5 overflow-y-auto flex-1">
           
-          {/* Kamera Sektion - iPad Tilpasset */}
+          {/* Kamera Sektion - iPad Tilpasset med direkte htmlFor */}
           <div className="bg-slate-800/60 border-2 border-dashed border-slate-700 rounded-2xl p-4 text-center relative overflow-hidden">
             <input
-              ref={fileInputRef}
+              id="crqs-camera-input"
               type="file"
               accept="image/*"
               capture="environment"
               onChange={handlePhotoCapture}
-              className="hidden"
+              className="sr-only"
             />
 
             {photoPreview ? (
@@ -213,13 +213,12 @@ export const CheckModal: React.FC<Props> = ({ checkNumber, onSave, onClose }) =>
                   className="max-h-56 mx-auto rounded-xl shadow-lg object-cover border border-slate-600"
                 />
                 <div className="mt-3 flex items-center justify-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow"
+                  <label
+                    htmlFor="crqs-camera-input"
+                    className="cursor-pointer inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow"
                   >
                     <Camera className="w-4 h-4" /> Tag nyt billede
-                  </button>
+                  </label>
                   {isUploadingPhoto ? (
                     <span className="text-xs text-amber-400 flex items-center gap-1.5 animate-pulse">
                       <span className="w-2 h-2 rounded-full bg-amber-400"></span> Synkroniserer billede til skyen...
@@ -232,9 +231,9 @@ export const CheckModal: React.FC<Props> = ({ checkNumber, onSave, onClose }) =>
                 </div>
               </div>
             ) : (
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="cursor-pointer py-6 px-4 flex flex-col items-center justify-center group"
+              <label
+                htmlFor="crqs-camera-input"
+                className="cursor-pointer py-6 px-4 flex flex-col items-center justify-center group block"
               >
                 <div className="w-16 h-16 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center mb-3 group-hover:scale-110 transition-all border border-blue-500/30">
                   <Camera className="w-8 h-8" />
@@ -254,7 +253,7 @@ export const CheckModal: React.FC<Props> = ({ checkNumber, onSave, onClose }) =>
                     Åbn Kamera Nu
                   </span>
                 </div>
-              </div>
+              </label>
             )}
           </div>
 

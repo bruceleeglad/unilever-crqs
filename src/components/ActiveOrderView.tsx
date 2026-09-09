@@ -56,9 +56,11 @@ export const ActiveOrderView: React.FC<Props> = ({
       }
     } catch (err) {
       console.error('Fejl ved gem tjek:', err);
-    } finally {
-      setShowCheckModal(false);
     }
+    // Luk modal i næste tick så React DOM unmount sker rent uden DOM-kollision
+    setTimeout(() => {
+      setShowCheckModal(false);
+    }, 50);
   };
 
   const getStatusBadge = (rating: QualityRating) => {
