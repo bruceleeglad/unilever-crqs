@@ -215,12 +215,8 @@ export const ActiveOrderView: React.FC<Props> = ({
                     <img
                       src={chk.photoUrl.startsWith('http') ? `/api/image?url=${encodeURIComponent(chk.photoUrl)}` : chk.photoUrl}
                       alt={`Tjek #${chk.checkNumber}`}
+                      loading="lazy"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        if (chk.photoUrl && (e.target as HTMLImageElement).src !== chk.photoUrl) {
-                          (e.target as HTMLImageElement).src = chk.photoUrl;
-                        }
-                      }}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-slate-600">

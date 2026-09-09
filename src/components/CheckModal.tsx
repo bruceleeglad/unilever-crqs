@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { QualityRating } from '../types/crqs';
 import { Camera, Check, AlertTriangle, XCircle, Clock, X, CheckCircle2 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 
 interface Props {
   checkNumber: number;
@@ -118,10 +117,6 @@ export const CheckModal: React.FC<Props> = ({ checkNumber, onSave, onClose }) =>
       comment: comment || 'Kontrol udført.',
       photoUrl: photoUrl || defaultPhoto
     });
-
-    try {
-      confetti({ particleCount: 40, spread: 60, origin: { y: 0.8 } });
-    } catch (e) {}
   };
 
   const renderTrafficLight = (
