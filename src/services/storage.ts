@@ -23,22 +23,38 @@ export const getStoredOrders = (): ProductionOrder[] => {
   }
 };
 
-// Hent de seneste ordrer fra Vercel skyen (så chefen ser iPad'ens ændringer)
+// Hent de seneste ordrer fra skyen (så chefen ser iPad'ens oprettelser og checks i realtid)
 export const fetchCloudOrders = async (): Promise<ProductionOrder[]> => {
   try {
     const res = await fetch('/api/orders');
     if (res.ok) {
       const data = await res.json();
       if (data && Array.isArray(data.orders)) {
-        const cloudOrders: ProductionOrder[] = data.orders.filter((o: any) => o.id !== 'ord-101');
+        const cloudOrders: ProductionOrder[] = data.orders.filter((o: any) => o && o.id !== 'ord-101');
         const local = getStoredOrders();
-        
-        // Hvis skyen har data eller er nyere, flet / opdater lokalt lager
+
         if (cloudOrders.length > 0) {
-          localStorage.setItem(ORDERS_KEY, JSON.stringify(cloudOrders));
-          return cloudOrders;
+          // Flet lokale ordrer med cloud-ordrer (hvis en enhed har oprettet nye tjek lokalt)
+          const orderMap = new Map<string, ProductionOrder>();
+          
+          // Først cloud ordrer
+          cloudOrders.forEach(o => orderMap.set(o.id, o));
+
+          // Sammenlign med lokale: Hvis lokalt har flere checks for samme ordre, brug den mest opdaterede
+          local.forEach(loc => {
+            const existing = orderMap.get(loc.id);
+            if (!existing) {
+              orderMap.set(loc.id, loc);
+            } else if ((loc.checks?.length || 0) > (existing.checks?.length || 0)) {
+              orderMap.set(loc.id, loc);
+            }
+          });
+
+          const merged = Array.from(orderMap.values());
+          localStorage.setItem(ORDERS_KEY, JSON.stringify(merged));
+          return merged;
         } else if (local.length > 0) {
-          // Send lokale ordrer op i skyen
+          // Hvis skyen er tom, upload de eksisterende lokale ordrer
           await syncOrdersToCloud(local);
           return local;
         }

@@ -1,7 +1,8 @@
 // Central Vercel Serverless Endpoint til CRQS Ordrer
-// Bruger KV / persistent cloud storage fallback så data synkroniseres mellem alle enheder (iPad & PC)
+// Bruger persistent cloud sync bus så iPad og Chef PC deler alle data i realtid uden login
 
-let memoryOrders = [];
+const SYNC_TOPIC = 'unilever-crqs-db-state-v1';
+const SYNC_ENDPOINT = `https://ntfy.sh/${SYNC_TOPIC}`;
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Credentials', 'true');
@@ -16,45 +17,70 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Hvis Vercel KV er tilknyttet
-  const KV_URL = process.env.KV_REST_API_URL;
-  const KV_TOKEN = process.env.KV_REST_API_TOKEN;
-
+  // GET: Hent den seneste ordretilstand fra skyen
   if (req.method === 'GET') {
-    if (KV_URL && KV_TOKEN) {
-      try {
-        const response = await fetch(`${KV_URL}/get/unilever_crqs_orders`, {
-          headers: { Authorization: `Bearer ${KV_TOKEN}` }
-        });
-        const data = await response.json();
-        const orders = data.result ? JSON.parse(data.result) : [];
-        return res.status(200).json({ orders });
-      } catch (err) {
-        console.error('KV get error:', err);
+    try {
+      const response = await fetch(`${SYNC_ENDPOINT}/json?poll=1`, {
+        headers: { 'User-Agent': 'Unilever-CRQS' }
+      });
+      if (response.ok) {
+        const text = await response.text();
+        const lines = text
+          .trim()
+          .split('\n')
+          .filter(Boolean)
+          .map((line) => {
+            try {
+              return JSON.parse(line);
+            } catch {
+              return null;
+            }
+          })
+          .filter((item) => item && item.event === 'message' && item.message);
+
+        // Find den seneste meddelelse, der indeholder ordrer
+        for (let i = lines.length - 1; i >= 0; i--) {
+          try {
+            const parsed = JSON.parse(lines[i].message);
+            if (parsed && Array.isArray(parsed.orders)) {
+              return res.status(200).json({ orders: parsed.orders });
+            }
+          } catch {
+            // Spring over hvis ikke gyldig JSON
+          }
+        }
       }
+    } catch (e) {
+      console.error('Fetch cloud orders error:', e);
     }
-    return res.status(200).json({ orders: memoryOrders });
+    return res.status(200).json({ orders: [] });
   }
 
+  // POST: Gem ordrer i den globale sky
   if (req.method === 'POST') {
     try {
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
       const orders = body && Array.isArray(body.orders) ? body.orders : [];
 
-      memoryOrders = orders;
+      const payload = JSON.stringify({
+        orders,
+        updatedAt: new Date().toISOString()
+      });
 
-      if (KV_URL && KV_TOKEN) {
-        await fetch(`${KV_URL}/set/unilever_crqs_orders`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${KV_TOKEN}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(JSON.stringify(orders))
-        });
+      const sendRes = await fetch(SYNC_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Title': 'orders-sync',
+          'Content-Type': 'application/json'
+        },
+        body: payload
+      });
+
+      if (sendRes.ok) {
+        return res.status(200).json({ success: true, count: orders.length });
+      } else {
+        return res.status(500).json({ error: 'Failed to broadcast orders' });
       }
-
-      return res.status(200).json({ success: true, count: orders.length });
     } catch (err) {
       return res.status(500).json({ error: err.message });
     }

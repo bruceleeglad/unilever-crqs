@@ -29,6 +29,7 @@ export const CheckModal: React.FC<Props> = ({ checkNumber, onSave, onClose }) =>
   const [comment, setComment] = useState('');
   const [photoUrl, setPhotoUrl] = useState<string>('');
   const [photoPreview, setPhotoPreview] = useState<string>('');
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentTime = new Date().toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
@@ -40,7 +41,7 @@ export const CheckModal: React.FC<Props> = ({ checkNumber, onSave, onClose }) =>
     const reader = new FileReader();
     reader.onload = (event) => {
       const img = new Image();
-      img.onload = () => {
+      img.onload = async () => {
         const canvas = document.createElement('canvas');
         const MAX_WIDTH = 1280;
         const scaleSize = MAX_WIDTH / img.width;
@@ -55,6 +56,37 @@ export const CheckModal: React.FC<Props> = ({ checkNumber, onSave, onClose }) =>
         const compressedBase64 = canvas.toDataURL('image/jpeg', 0.85);
         setPhotoPreview(compressedBase64);
         setPhotoUrl(compressedBase64);
+
+        // Upload til skyen så chefen på en anden PC kan se billedet direkte
+        try {
+          setIsUploadingPhoto(true);
+          canvas.toBlob(async (blob) => {
+            if (!blob) return;
+            try {
+              const formData = new FormData();
+              formData.append('reqtype', 'fileupload');
+              formData.append('time', '72h');
+              formData.append('fileToUpload', blob, `crqs-${Date.now()}.jpg`);
+
+              const uploadRes = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
+                method: 'POST',
+                body: formData
+              });
+              if (uploadRes.ok) {
+                const cloudUrl = await uploadRes.text();
+                if (cloudUrl && cloudUrl.startsWith('http')) {
+                  setPhotoUrl(cloudUrl.trim());
+                }
+              }
+            } catch (err) {
+              console.warn('Billed-upload til skyen mislykkedes, bruger lokalt komprimeret billede:', err);
+            } finally {
+              setIsUploadingPhoto(false);
+            }
+          }, 'image/jpeg', 0.85);
+        } catch (e) {
+          setIsUploadingPhoto(false);
+        }
       };
       img.src = event.target?.result as string;
     };
@@ -181,13 +213,24 @@ export const CheckModal: React.FC<Props> = ({ checkNumber, onSave, onClose }) =>
                   alt="CRQS Preview"
                   className="max-h-56 mx-auto rounded-xl shadow-lg object-cover border border-slate-600"
                 />
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="mt-3 inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow"
-                >
-                  <Camera className="w-4 h-4" /> Tag nyt billede
-                </button>
+                <div className="mt-3 flex items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex items-center gap-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold px-4 py-2 rounded-lg shadow"
+                  >
+                    <Camera className="w-4 h-4" /> Tag nyt billede
+                  </button>
+                  {isUploadingPhoto ? (
+                    <span className="text-xs text-amber-400 flex items-center gap-1.5 animate-pulse">
+                      <span className="w-2 h-2 rounded-full bg-amber-400"></span> Synkroniserer billede til skyen...
+                    </span>
+                  ) : (
+                    <span className="text-xs text-emerald-400 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Billede klar til PC & iPad
+                    </span>
+                  )}
+                </div>
               </div>
             ) : (
               <div
