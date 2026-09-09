@@ -14,7 +14,10 @@ import {
   Layers,
   Clock,
   Eye,
-  X
+  X,
+  FileText,
+  ShieldCheck,
+  HelpCircle
 } from 'lucide-react';
 
 interface Props {
@@ -26,6 +29,7 @@ export const ManagementDashboard: React.FC<Props> = ({ orders }) => {
   const [selectedLine, setSelectedLine] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [selectedCheckForDetail, setSelectedCheckForDetail] = useState<{ check: CrqsCheck; order: ProductionOrder } | null>(null);
+  const [showDocModal, setShowDocModal] = useState<boolean>(false);
 
   // Filtrering af ordrer
   const filteredOrders = orders.filter((o) => {
@@ -102,6 +106,13 @@ export const ManagementDashboard: React.FC<Props> = ({ orders }) => {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowDocModal(true)}
+            className="flex items-center gap-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow"
+          >
+            <FileText className="w-4 h-4 text-blue-400" />
+            Drift & Sikkerhed (0 kr.)
+          </button>
           <button
             onClick={exportCSV}
             className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all shadow"
@@ -422,6 +433,151 @@ export const ManagementDashboard: React.FC<Props> = ({ orders }) => {
                   <div><strong>Tank:</strong> {selectedCheckForDetail.order.tankNumber || 'N/A'}</div>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dokumentation & Drift Modal */}
+      {showDocModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 md:p-6 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-700 w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden my-auto max-h-[90vh] flex flex-col">
+            <div className="p-4 md:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-800/50">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center border border-blue-500/30">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Teknisk Drift, Sikkerhed & Overdragelse</h3>
+                  <p className="text-xs text-slate-400">Officiel dokumentation for Unilever CRQS • Total TCO: 0,00 kr.</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <a
+                  href="/Unilever_CRQS_Drift_og_Overdragelse.pdf"
+                  download="Unilever_CRQS_Drift_og_Overdragelse.pdf"
+                  className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-all shadow"
+                >
+                  <Download className="w-3.5 h-3.5" /> Hent PDF
+                </a>
+                <a
+                  href="https://drive.google.com/file/d/1N0nOWEJvm1WVm5BBUVw4RPqG318teBWM/view?usp=drivesdk"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold px-3.5 py-2 rounded-lg transition-all shadow"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-blue-400" /> Google Drev
+                </a>
+                <button
+                  onClick={() => setShowDocModal(false)}
+                  className="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-6 text-sm text-slate-300">
+              {/* Highlight TCO Card */}
+              <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl">
+                <h4 className="text-emerald-400 font-bold text-sm mb-1 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" /> 100% Gratis Drift (Total TCO: 0,- DKK)
+                </h4>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Systemet er bygget til at køre omkostningsfrit på standard cloud-kvoter (Vercel & GitHub) uden krav om betalingskort eller brugerlicenser. Kan anvendes på uendeligt mange enheder samtidigt.
+                </p>
+              </div>
+
+              {/* TCO Tabel */}
+              <div>
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Økonomi- & Ressourceoverblik</h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-slate-400 bg-slate-800/40">
+                        <th className="p-2.5">Komponent</th>
+                        <th className="p-2.5">Platform</th>
+                        <th className="p-2.5">Pris Nu</th>
+                        <th className="p-2.5">Pris Fremtid</th>
+                        <th className="p-2.5">Kvote / Grænse</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60">
+                      <tr>
+                        <td className="p-2.5 font-semibold text-white">Hosting</td>
+                        <td className="p-2.5">Vercel Community</td>
+                        <td className="p-2.5 text-emerald-400 font-bold">0 kr.</td>
+                        <td className="p-2.5 text-emerald-400 font-bold">0 kr.</td>
+                        <td className="p-2.5 text-slate-400">100 GB/mdr (forbrug: under 1 GB)</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-semibold text-white">Kildekode</td>
+                        <td className="p-2.5">GitHub Repositories</td>
+                        <td className="p-2.5 text-emerald-400 font-bold">0 kr.</td>
+                        <td className="p-2.5 text-emerald-400 font-bold">0 kr.</td>
+                        <td className="p-2.5 text-slate-400">Ubegrænset versionshistorik</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-semibold text-white">Billeder & Cloud Sync</td>
+                        <td className="p-2.5">Serverless Edge Proxy</td>
+                        <td className="p-2.5 text-emerald-400 font-bold">0 kr.</td>
+                        <td className="p-2.5 text-emerald-400 font-bold">0 kr.</td>
+                        <td className="p-2.5 text-slate-400">Automatisk komprimering & proxy</td>
+                      </tr>
+                      <tr>
+                        <td className="p-2.5 font-semibold text-white">Brugerlicenser</td>
+                        <td className="p-2.5">Web standard (PWA)</td>
+                        <td className="p-2.5 text-emerald-400 font-bold">0 kr.</td>
+                        <td className="p-2.5 text-emerald-400 font-bold">0 kr.</td>
+                        <td className="p-2.5 text-slate-400">Ingen begrænsning i brugere</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Overdragelse & Ejerskab */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-800">
+                  <h4 className="font-bold text-white text-xs uppercase tracking-wider mb-2 text-blue-400">
+                    Fuld Ejeroverdragelse
+                  </h4>
+                  <ul className="text-xs space-y-1.5 list-disc list-inside text-slate-300">
+                    <li>Ledelsen inviteres som <strong>Admin på Vercel</strong> med <code>@unilever.com</code>.</li>
+                    <li>Koden på GitHub kan overdrages til Unilevers egen IT-organisation.</li>
+                    <li>Bygget i standard <strong>React 19 & TypeScript</strong> — enhver supporter kan overtage.</li>
+                  </ul>
+                </div>
+
+                <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-800">
+                  <h4 className="font-bold text-white text-xs uppercase tracking-wider mb-2 text-blue-400">
+                    AI-Support & Fjernvedligeholdelse
+                  </h4>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Ved produktionsændringer (nye linjer, ændring af felter eller fejlretning) kan der sendes en mail på dansk. AI-udvikleren retter koden, kører tests og deployer opdateringen til linjen på under 2 minutter.
+                  </p>
+                </div>
+              </div>
+
+              {/* Data & Backup */}
+              <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-800">
+                <h4 className="font-bold text-white text-xs uppercase tracking-wider mb-1.5 text-slate-200">
+                  Dataejerskab & Backup
+                </h4>
+                <p className="text-xs text-slate-400 leading-relaxed">
+                  Ingen data er låst til systemet. Alle registreringer, linjeclearances og kvalitetskontroller kan til enhver tid downloades som Excel/CSV via knappen foroven og arkiveres på Unilevers eget netværksdrev eller SharePoint.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-800 bg-slate-800/30 flex items-center justify-between">
+              <span className="text-xs text-slate-500">Unilever Production Quality System • Version 1.0</span>
+              <button
+                onClick={() => setShowDocModal(false)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold"
+              >
+                Luk Vindue
+              </button>
             </div>
           </div>
         </div>
