@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ProductionOrder } from './types/crqs';
-import { getStoredOrders, getActiveOrderId, saveOrders, setActiveOrderId, fetchCloudOrders } from './services/storage';
+import { getStoredOrders, getActiveOrderId, saveOrders, setActiveOrderId, fetchCloudOrders, syncOrdersToCloud } from './services/storage';
 import { LineClearanceForm } from './components/LineClearanceForm';
 import { ActiveOrderView } from './components/ActiveOrderView';
 import { ManagementDashboard } from './components/ManagementDashboard';
@@ -127,10 +127,26 @@ export function App() {
           </button>
         </div>
 
-        {/* Cloud Sync Status Indicator */}
-        <div className="hidden lg:flex items-center gap-2 text-[11px] text-slate-400 bg-slate-800/40 px-3 py-1 rounded-full border border-slate-700/60">
-          <span className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-amber-400 animate-spin' : 'bg-emerald-400'}`} />
-          <span>{isSyncing ? 'Synkroniserer...' : 'Cloud Live (Delt Database)'}</span>
+        {/* Cloud Sync Status Indicator med Manuel Knap */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={async () => {
+              setIsSyncing(true);
+              const cur = getStoredOrders();
+              if (cur.length > 0) {
+                await syncOrdersToCloud(cur);
+              }
+              const cloud = await fetchCloudOrders();
+              setOrders(cloud);
+              setIsSyncing(false);
+            }}
+            className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 px-3 py-1.5 rounded-lg border border-slate-700/60 shadow-sm transition-all"
+            title="Synkroniser med skyen nu"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-amber-400' : 'text-emerald-400'}`} />
+            <span className="hidden md:inline">{isSyncing ? 'Synkroniserer...' : 'Synkroniser'}</span>
+          </button>
         </div>
       </header>
 
