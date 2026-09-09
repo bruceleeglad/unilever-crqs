@@ -271,9 +271,15 @@ export const ManagementDashboard: React.FC<Props> = ({ orders }) => {
                         <div className="relative h-40 bg-slate-900 overflow-hidden">
                           {chk.photoUrl ? (
                             <img
-                              src={chk.photoUrl}
+                              src={chk.photoUrl.startsWith('http') ? `/api/image?url=${encodeURIComponent(chk.photoUrl)}` : chk.photoUrl}
                               alt={`Tjek #${chk.checkNumber}`}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              onError={(e) => {
+                                // Hvis proxy fejler, fallback til direkte URL
+                                if (chk.photoUrl && (e.target as HTMLImageElement).src !== chk.photoUrl) {
+                                  (e.target as HTMLImageElement).src = chk.photoUrl;
+                                }
+                              }}
                             />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-slate-600">
@@ -358,9 +364,15 @@ export const ManagementDashboard: React.FC<Props> = ({ orders }) => {
               <div className="flex-1 bg-slate-950 rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center min-h-[300px]">
                 {selectedCheckForDetail.check.photoUrl ? (
                   <img
-                    src={selectedCheckForDetail.check.photoUrl}
+                    src={selectedCheckForDetail.check.photoUrl.startsWith('http') ? `/api/image?url=${encodeURIComponent(selectedCheckForDetail.check.photoUrl)}` : selectedCheckForDetail.check.photoUrl}
                     alt="CRQS Full"
                     className="max-h-[60vh] w-auto object-contain"
+                    onError={(e) => {
+                      const orig = selectedCheckForDetail.check.photoUrl;
+                      if (orig && (e.target as HTMLImageElement).src !== orig) {
+                        (e.target as HTMLImageElement).src = orig;
+                      }
+                    }}
                   />
                 ) : (
                   <div className="text-slate-500">Intet billede</div>

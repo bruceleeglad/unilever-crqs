@@ -60,31 +60,24 @@ export const CheckModal: React.FC<Props> = ({ checkNumber, onSave, onClose }) =>
         // Upload til skyen så chefen på en anden PC kan se billedet direkte
         try {
           setIsUploadingPhoto(true);
-          canvas.toBlob(async (blob) => {
-            if (!blob) return;
-            try {
-              const formData = new FormData();
-              formData.append('reqtype', 'fileupload');
-              formData.append('time', '72h');
-              formData.append('fileToUpload', blob, `crqs-${Date.now()}.jpg`);
+          const uploadRes = await fetch('/api/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              image: compressedBase64,
+              filename: `crqs-${Date.now()}.jpg`
+            })
+          });
 
-              const uploadRes = await fetch('https://litterbox.catbox.moe/resources/internals/api.php', {
-                method: 'POST',
-                body: formData
-              });
-              if (uploadRes.ok) {
-                const cloudUrl = await uploadRes.text();
-                if (cloudUrl && cloudUrl.startsWith('http')) {
-                  setPhotoUrl(cloudUrl.trim());
-                }
-              }
-            } catch (err) {
-              console.warn('Billed-upload til skyen mislykkedes, bruger lokalt komprimeret billede:', err);
-            } finally {
-              setIsUploadingPhoto(false);
+          if (uploadRes.ok) {
+            const data = await uploadRes.json();
+            if (data && data.url) {
+              setPhotoUrl(data.url);
             }
-          }, 'image/jpeg', 0.85);
-        } catch (e) {
+          }
+        } catch (err) {
+          console.warn('Billed-upload via /api/upload fejlede, fallbacker:', err);
+        } finally {
           setIsUploadingPhoto(false);
         }
       };
