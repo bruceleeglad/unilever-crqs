@@ -1,5 +1,5 @@
 ﻿import React, { useState, useRef } from 'react';
-import { Camera, X, Check, UploadCloud, AlertCircle, Package } from 'lucide-react';
+import { Camera, X, Check, UploadCloud, AlertCircle, Package, Sparkles, Loader2 } from 'lucide-react';
 import { PalletItem } from '../types/crqs';
 
 interface Props {
@@ -12,7 +12,7 @@ export const PalletRegistrationModal: React.FC<Props> = ({ onClose, onSave }) =>
   const [oldItemNumber, setOldItemNumber] = useState('');
   const [description, setDescription] = useState('');
   const [quantity, setQuantity] = useState<number | ''>('');
-  const [unit, setUnit] = useState<PalletItem['unit']>('kasser');
+  const [unit, setUnit] = useState<PalletItem['unit']>('stk');
   const [batchNumber, setBatchNumber] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [registeredBy, setRegisteredBy] = useState('');
@@ -21,6 +21,8 @@ export const PalletRegistrationModal: React.FC<Props> = ({ onClose, onSave }) =>
   const [photoPreview, setPhotoPreview] = useState<string>('');
   const [photoUrl, setPhotoUrl] = useState<string>('');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isAnalyzingOCR, setIsAnalyzingOCR] = useState(false);
+  const [ocrSuccessMsg, setOcrSuccessMsg] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -32,7 +34,7 @@ export const PalletRegistrationModal: React.FC<Props> = ({ onClose, onSave }) =>
       const img = new Image();
       img.onload = async () => {
         const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 800;
+        const MAX_WIDTH = 960; // Højere opløsning for skarp OCR aflæsning af tal og stregkoder
         const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
         const w = Math.round(img.width * scale);
         const h = Math.round(img.height * scale);
@@ -42,33 +44,77 @@ export const PalletRegistrationModal: React.FC<Props> = ({ onClose, onSave }) =>
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, w, h);
         }
 
-        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.65);
+        const compressedBase64 = canvas.toDataURL('image/jpeg', 0.75);
         setPhotoPreview(compressedBase64);
         setPhotoUrl(compressedBase64);
 
+        // 1. Upload til skyen
+        setIsUploadingPhoto(true);
+        setIsAnalyzingOCR(true);
+        setOcrSuccessMsg(null);
+
         try {
-          setIsUploadingPhoto(true);
-          const uploadRes = await fetch('/api/upload', {
+          const uploadPromise = fetch('/api/upload', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               image: compressedBase64,
               filename: `pallet-${Date.now()}.jpg`
             })
-          });
-          if (uploadRes.ok) {
-            const data = await uploadRes.json();
-            if (data && data.url) {
-              setPhotoUrl(data.url);
+          }).then(async (res) => {
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.url) setPhotoUrl(data.url);
             }
-          }
-        } catch (err) {
-          console.warn('Pallet photo upload fallback to local:', err);
+          }).catch(err => console.warn('Upload fallback:', err));
+
+          // 2. Kør AI OCR udlæsning parallelt
+          const ocrPromise = fetch('/api/ocr', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image: compressedBase64 })
+          }).then(async (res) => {
+            if (res.ok) {
+              const data = await res.json();
+              if (data && data.parsed) {
+                const p = data.parsed;
+                let foundAny = false;
+                if (p.oldItemNumber) {
+                  setOldItemNumber(p.oldItemNumber);
+                  foundAny = true;
+                }
+                if (p.description) {
+                  setDescription(p.description);
+                  foundAny = true;
+                }
+                if (p.quantity) {
+                  setQuantity(p.quantity);
+                  foundAny = true;
+                }
+                if (p.batchNumber) {
+                  setBatchNumber(p.batchNumber);
+                  foundAny = true;
+                }
+                if (p.expiryDate) {
+                  setExpiryDate(p.expiryDate);
+                  foundAny = true;
+                }
+
+                if (foundAny) {
+                  setOcrSuccessMsg('Data blev udlæst automatisk fra pallesedlen!');
+                }
+              }
+            }
+          }).catch(err => console.warn('OCR error:', err));
+
+          await Promise.allSettled([uploadPromise, ocrPromise]);
         } finally {
           setIsUploadingPhoto(false);
+          setIsAnalyzingOCR(false);
         }
       };
       img.src = event.target?.result as string;
@@ -109,7 +155,12 @@ export const PalletRegistrationModal: React.FC<Props> = ({ onClose, onSave }) =>
               <Package className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">Registrer Palle på Lageret</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-white">Registrer Palle på Lageret</h3>
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 font-bold flex items-center gap-1">
+                  <Sparkles className="w-3 h-3" /> Auto-Scan
+                </span>
+              </div>
               <p className="text-xs text-slate-400">Paller der ikke kan scannes i SAP (udgåede / ældre varer)</p>
             </div>
           </div>
@@ -124,11 +175,19 @@ export const PalletRegistrationModal: React.FC<Props> = ({ onClose, onSave }) =>
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-4 md:p-6 overflow-y-auto space-y-4 flex-1">
           
-          {/* Foto Sektion */}
+          {/* Foto Sektion med Auto-Scanner */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-              Foto af Palleseddel / Palle
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Foto af Palleseddel / Palle
+              </label>
+              {isAnalyzingOCR && (
+                <span className="text-xs text-amber-400 font-bold flex items-center gap-1 animate-pulse">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" /> Scanner seddel med AI...
+                </span>
+              )}
+            </div>
+
             <input
               type="file"
               accept="image/*"
@@ -137,13 +196,14 @@ export const PalletRegistrationModal: React.FC<Props> = ({ onClose, onSave }) =>
               onChange={handlePhotoCapture}
               className="hidden"
             />
+
             {photoPreview ? (
-              <div className="relative rounded-xl overflow-hidden border border-slate-700 bg-slate-800 max-h-48 flex items-center justify-center">
-                <img src={photoPreview} alt="Palle preview" className="w-full h-48 object-cover" />
+              <div className="relative rounded-xl overflow-hidden border border-slate-700 bg-slate-800 max-h-52 flex items-center justify-center">
+                <img src={photoPreview} alt="Palle preview" className="w-full h-52 object-contain bg-slate-950/80" />
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-3 right-3 bg-slate-900/90 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 shadow"
+                  className="absolute bottom-3 right-3 bg-slate-900/90 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 shadow hover:bg-slate-800"
                 >
                   <Camera className="w-3.5 h-3.5" /> Skift Foto
                 </button>
@@ -151,15 +211,27 @@ export const PalletRegistrationModal: React.FC<Props> = ({ onClose, onSave }) =>
             ) : (
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="cursor-pointer border-2 border-dashed border-slate-700 hover:border-amber-500/60 rounded-xl p-5 text-center bg-slate-800/30 hover:bg-slate-800/60 transition-all flex flex-col items-center justify-center gap-2"
+                className="cursor-pointer border-2 border-dashed border-amber-500/40 hover:border-amber-400 rounded-xl p-6 text-center bg-slate-800/40 hover:bg-slate-800/70 transition-all flex flex-col items-center justify-center gap-2 group"
               >
-                <div className="w-10 h-10 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20">
-                  <Camera className="w-5 h-5" />
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-300 flex items-center justify-center border border-amber-500/30 group-hover:scale-110 transition-transform">
+                  <Camera className="w-6 h-6" />
                 </div>
                 <div>
-                  <span className="text-sm font-semibold text-white">Tag foto af pallesedlen</span>
-                  <p className="text-xs text-slate-400 mt-0.5">Brug iPad/mobil kamera så driftschefen kan se mærket</p>
+                  <span className="text-sm font-bold text-white flex items-center justify-center gap-1.5">
+                    Tag foto af pallesedlen
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                  </span>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Systemet scanner automatisk varenummer, OMO/Knorr beskrivelse og antal!
+                  </p>
                 </div>
+              </div>
+            )}
+
+            {ocrSuccessMsg && (
+              <div className="mt-2 p-2.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2 text-xs text-emerald-300">
+                <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span>{ocrSuccessMsg}</span>
               </div>
             )}
           </div>
@@ -186,7 +258,7 @@ export const PalletRegistrationModal: React.FC<Props> = ({ onClose, onSave }) =>
               <input
                 type="text"
                 inputMode="numeric"
-                placeholder="f.eks. 67182944"
+                placeholder="f.eks. 65644425"
                 value={oldItemNumber}
                 onChange={(e) => setOldItemNumber(e.target.value)}
                 required
@@ -202,11 +274,11 @@ export const PalletRegistrationModal: React.FC<Props> = ({ onClose, onSave }) =>
             </label>
             <input
               type="text"
-              placeholder="f.eks. Knorr Flasker 250ml klar, gamle kapsler osv."
+              placeholder="f.eks. OMO COLOR COLSENS 5X1840ML (Karton)"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:ring-2 focus:ring-amber-500"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:ring-2 focus:ring-amber-500 font-medium"
             />
           </div>
 
@@ -219,7 +291,7 @@ export const PalletRegistrationModal: React.FC<Props> = ({ onClose, onSave }) =>
               <input
                 type="number"
                 inputMode="numeric"
-                placeholder="f.eks. 48"
+                placeholder="f.eks. 720"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value === '' ? '' : Number(e.target.value))}
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:ring-2 focus:ring-amber-500 font-bold"
@@ -232,24 +304,24 @@ export const PalletRegistrationModal: React.FC<Props> = ({ onClose, onSave }) =>
               <select
                 value={unit}
                 onChange={(e) => setUnit(e.target.value as any)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-amber-500"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-sm focus:ring-2 focus:ring-amber-500 font-semibold"
               >
+                <option value="stk">Stk (f.eks. kartoner/flasker)</option>
                 <option value="kasser">Kasser</option>
-                <option value="stk">Stk</option>
                 <option value="paller">Paller</option>
                 <option value="kg">Kg</option>
               </select>
             </div>
             <div className="col-span-2 sm:col-span-1">
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                Batch / Lot Nr.
+                Batch / Ordre Ref.
               </label>
               <input
                 type="text"
-                placeholder="f.eks. L-4091"
+                placeholder="f.eks. 2929627-0"
                 value={batchNumber}
                 onChange={(e) => setBatchNumber(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:ring-2 focus:ring-amber-500 uppercase"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:ring-2 focus:ring-amber-500 uppercase font-mono"
               />
             </div>
           </div>
@@ -258,11 +330,11 @@ export const PalletRegistrationModal: React.FC<Props> = ({ onClose, onSave }) =>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                Udløbsdato (hvis angivet)
+                Dato fra seddel (Udløb / Lev.)
               </label>
               <input
                 type="text"
-                placeholder="f.eks. MM/YYYY eller DD/MM/YYYY"
+                placeholder="f.eks. 25.08.26"
                 value={expiryDate}
                 onChange={(e) => setExpiryDate(e.target.value)}
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:ring-2 focus:ring-amber-500"
@@ -274,7 +346,7 @@ export const PalletRegistrationModal: React.FC<Props> = ({ onClose, onSave }) =>
               </label>
               <input
                 type="text"
-                placeholder="f.eks. Hans (Lager)"
+                placeholder="f.eks. Operatør / Lager"
                 value={registeredBy}
                 onChange={(e) => setRegisteredBy(e.target.value)}
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2.5 text-white text-sm focus:ring-2 focus:ring-amber-500"
@@ -307,17 +379,17 @@ export const PalletRegistrationModal: React.FC<Props> = ({ onClose, onSave }) =>
             </button>
             <button
               type="submit"
-              disabled={isUploadingPhoto}
+              disabled={isUploadingPhoto || isAnalyzingOCR}
               className={`flex items-center gap-2 font-bold px-6 py-2.5 rounded-xl shadow-lg text-sm transition-all ${
-                isUploadingPhoto
+                isUploadingPhoto || isAnalyzingOCR
                   ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
                   : 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black shadow-amber-500/20'
               }`}
             >
-              {isUploadingPhoto ? (
+              {isUploadingPhoto || isAnalyzingOCR ? (
                 <>
                   <div className="w-4 h-4 border-2 border-slate-950/30 border-t-slate-950 rounded-full animate-spin" />
-                  <span>Uploader foto...</span>
+                  <span>{isAnalyzingOCR ? 'Udlæser seddel...' : 'Uploader...'}</span>
                 </>
               ) : (
                 <>
