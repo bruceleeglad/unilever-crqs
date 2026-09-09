@@ -1,4 +1,4 @@
-﻿export type QualityRating = 'green' | 'yellow' | 'red';
+export type QualityRating = 'green' | 'yellow' | 'red';
 
 export interface CrqsCheck {
   id: string;
@@ -44,3 +44,25 @@ export interface ProductionOrder {
   };
   checks: CrqsCheck[];
 }
+
+export type PalletStatus = 'investigating' | 'ready_relabel' | 'scrap' | 'resolved';
+
+export interface PalletItem {
+  id: string; // f.eks. PAL-2026-001
+  palletNumber: string; // Internt pallenr
+  location: string; // f.eks. "Reol B-14, Plads 3" eller "Buffer Syd"
+  oldItemNumber: string; // Gammelt varenummer / udgået MRDR
+  newItemNumber?: string; // Nyt tildelt SAP-nummer (hvis fundet)
+  description: string; // f.eks. "Knorr Flasker 250ml klar"
+  quantity: number; // Antal
+  unit: 'kasser' | 'stk' | 'kg' | 'paller';
+  batchNumber?: string; // Batch / Lot
+  expiryDate?: string; // Udløb YYYY-MM
+  photoUrl?: string; // Foto af palleseddel/palle
+  status: PalletStatus;
+  note?: string; // Kommentar/afklaring
+  registeredBy: string; // Operatør / Lagermand
+  registeredAt: string; // ISO dato
+  updatedAt?: string;
+}
+

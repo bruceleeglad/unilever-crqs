@@ -1,4 +1,4 @@
-import { ProductionOrder, CrqsCheck } from '../types/crqs';
+import { ProductionOrder, CrqsCheck, PalletItem } from '../types/crqs';
 
 const ORDERS_KEY = 'unilever_crqs_orders_v1';
 const ACTIVE_ORDER_ID_KEY = 'unilever_crqs_active_order_id';
@@ -177,3 +177,107 @@ export const completeOrder = (orderId: string) => {
     setActiveOrderId(null);
   }
 };
+
+// ==========================================
+// PALLELAGER / KARANTÆNE SERVICES
+// ==========================================
+const PALLETS_KEY = 'unilever_pallet_inventory_v1';
+
+export const getStoredPallets = (): PalletItem[] => {
+  try {
+    const raw = localStorage.getItem(PALLETS_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch (e) {
+    console.error('Failed to read pallets from localStorage:', e);
+    return [];
+  }
+};
+
+export const syncPalletsToCloud = async (pallets: PalletItem[]) => {
+  try {
+    await fetch('/api/pallets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pallets })
+    });
+  } catch (e) {
+    console.warn('Failed to sync pallets to cloud:', e);
+  }
+};
+
+export const fetchCloudPallets = async (): Promise<PalletItem[]> => {
+  try {
+    const res = await fetch('/api/pallets');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && Array.isArray(data.pallets)) {
+        const cloudPallets: PalletItem[] = data.pallets;
+        const local = getStoredPallets();
+
+        if (cloudPallets.length > 0) {
+          const map = new Map<string, PalletItem>();
+          cloudPallets.forEach(p => map.set(p.id, p));
+          local.forEach(l => {
+            if (!map.has(l.id)) {
+              map.set(l.id, l);
+            }
+          });
+          const merged = Array.from(map.values());
+          localStorage.setItem(PALLETS_KEY, JSON.stringify(merged));
+          return merged;
+        } else if (local.length > 0) {
+          await syncPalletsToCloud(local);
+          return local;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Pallets cloud sync unavailable, using local cache:', e);
+  }
+  return getStoredPallets();
+};
+
+export const savePallets = (pallets: PalletItem[]) => {
+  try {
+    localStorage.setItem(PALLETS_KEY, JSON.stringify(pallets));
+    syncPalletsToCloud(pallets);
+  } catch (e) {
+    console.warn('LocalStorage save pallets failed:', e);
+  }
+};
+
+export const registerPallet = (palletData: Omit<PalletItem, 'id' | 'palletNumber' | 'registeredAt'>): PalletItem => {
+  const pallets = getStoredPallets();
+  const nextNum = pallets.length + 1;
+  const palletNumber = `PAL-${new Date().getFullYear()}-${String(nextNum).padStart(4, '0')}`;
+  
+  const newPallet: PalletItem = {
+    ...palletData,
+    id: 'pal-' + Date.now(),
+    palletNumber,
+    registeredAt: new Date().toISOString()
+  };
+
+  const updated = [newPallet, ...pallets];
+  savePallets(updated);
+  return newPallet;
+};
+
+export const updatePalletStatus = (id: string, status: PalletItem['status'], note?: string, newItemNumber?: string): PalletItem | null => {
+  const pallets = getStoredPallets();
+  const index = pallets.findIndex(p => p.id === id);
+  if (index === -1) return null;
+
+  pallets[index] = {
+    ...pallets[index],
+    status,
+    ...(note !== undefined ? { note } : {}),
+    ...(newItemNumber !== undefined ? { newItemNumber } : {}),
+    updatedAt: new Date().toISOString()
+  };
+
+  savePallets(pallets);
+  return pallets[index];
+};
+

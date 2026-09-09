@@ -1,15 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { ProductionOrder } from './types/crqs';
-import { getStoredOrders, getActiveOrderId, saveOrders, setActiveOrderId, fetchCloudOrders, syncOrdersToCloud } from './services/storage';
+import { ProductionOrder, PalletItem, PalletStatus } from './types/crqs';
+import { 
+  getStoredOrders, 
+  getActiveOrderId, 
+  saveOrders, 
+  setActiveOrderId, 
+  fetchCloudOrders, 
+  syncOrdersToCloud,
+  getStoredPallets,
+  fetchCloudPallets,
+  registerPallet,
+  updatePalletStatus
+} from './services/storage';
 import { LineClearanceForm } from './components/LineClearanceForm';
 import { ActiveOrderView } from './components/ActiveOrderView';
 import { ManagementDashboard } from './components/ManagementDashboard';
-import { Tablet, LayoutDashboard, Plus, Factory, CheckCircle2, ShieldCheck, RefreshCw } from 'lucide-react';
+import { PalletWarehouseView } from './components/PalletWarehouseView';
+import { Tablet, LayoutDashboard, Plus, Factory, CheckCircle2, ShieldCheck, RefreshCw, Package } from 'lucide-react';
 
 export function App() {
   const [orders, setOrders] = useState<ProductionOrder[]>([]);
+  const [pallets, setPallets] = useState<PalletItem[]>([]);
   const [activeOrderId, setActiveId] = useState<string | null>(null);
-  const [currentView, setCurrentView] = useState<'operator' | 'management'>('operator');
+  const [currentView, setCurrentView] = useState<'operator' | 'management' | 'pallets'>('operator');
   const [isCreatingNew, setIsCreatingNew] = useState<boolean>(false);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
 
@@ -18,17 +31,27 @@ export function App() {
     // Først hurtig visning fra lokalt lager
     const local = getStoredOrders();
     setOrders(local);
+    const localPallets = getStoredPallets();
+    setPallets(localPallets);
+
     const active = getActiveOrderId();
     if (active) setActiveId(active);
 
     // Hent derefter fra skyen (Vercel)
     const loadFromCloud = async () => {
       setIsSyncing(true);
-      const cloudData = await fetchCloudOrders();
-      setOrders(cloudData);
+      const [cloudOrders, cloudPallets] = await Promise.all([
+        fetchCloudOrders(),
+        fetchCloudPallets()
+      ]);
+      setOrders(cloudOrders);
+      if (cloudPallets && cloudPallets.length > 0) {
+        setPallets(cloudPallets);
+      }
+
       const curActive = getActiveOrderId();
       if (!curActive) {
-        const firstActive = cloudData.find(o => o.status === 'active');
+        const firstActive = cloudOrders.find(o => o.status === 'active');
         if (firstActive) {
           setActiveId(firstActive.id);
           setActiveOrderId(firstActive.id);
@@ -41,11 +64,17 @@ export function App() {
 
     loadFromCloud();
 
-    // Polling hvert 5. sekund så chefens skærm opdaterer automatisk når operatøren gemmer et tjek
+    // Polling hvert 5. sekund så ændringer opdaterer automatisk i realtid
     const pollInterval = setInterval(async () => {
-      const cloudData = await fetchCloudOrders();
+      const [cloudData, cloudPallets] = await Promise.all([
+        fetchCloudOrders(),
+        fetchCloudPallets()
+      ]);
       if (cloudData && cloudData.length > 0) {
         setOrders(cloudData);
+      }
+      if (cloudPallets && cloudPallets.length > 0) {
+        setPallets(cloudPallets);
       }
     }, 5000);
 
@@ -77,6 +106,18 @@ export function App() {
     setIsCreatingNew(false);
   };
 
+  const handleRegisterPallet = (palletData: Omit<PalletItem, 'id' | 'palletNumber' | 'registeredAt'>) => {
+    const newPallet = registerPallet(palletData);
+    setPallets([newPallet, ...pallets]);
+  };
+
+  const handleUpdatePalletStatus = (id: string, status: PalletStatus, note?: string, newItemNumber?: string) => {
+    const updated = updatePalletStatus(id, status, note, newItemNumber);
+    if (updated) {
+      setPallets(pallets.map(p => p.id === id ? updated : p));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
       
@@ -91,14 +132,14 @@ export function App() {
             <div className="flex items-center gap-2">
               <span className="text-base font-black tracking-tight text-white">Unilever CRQS</span>
               <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                Kvalitetskontrol
+                Kvalitet & Lager
               </span>
             </div>
-            <p className="text-xs text-slate-400 hidden sm:block">Line Clearance & 20-minutters Fototjek</p>
+            <p className="text-xs text-slate-400 hidden sm:block">Line Clearance, 20-min Tjek & Pallelager</p>
           </div>
         </div>
 
-        {/* Navigation Switch mellem iPad Operatør og Ledelse */}
+        {/* Navigation Switch mellem iPad Operatør, Ledelse og Pallelager */}
         <div className="flex items-center gap-1.5 bg-slate-800/80 p-1 rounded-xl border border-slate-700/80">
           <button
             onClick={() => setCurrentView('operator')}
@@ -125,6 +166,24 @@ export function App() {
             <span className="hidden sm:inline">Chefer & Audit</span>
             <span className="sm:hidden">Dashboard</span>
           </button>
+
+          <button
+            onClick={() => setCurrentView('pallets')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+              currentView === 'pallets'
+                ? 'bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/30'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Package className="w-4 h-4" />
+            <span className="hidden sm:inline">Pallelager</span>
+            <span className="sm:hidden">Paller</span>
+            {pallets.filter(p => p.status === 'investigating').length > 0 && (
+              <span className="ml-1 px-1.5 py-0.2 bg-amber-400 text-slate-950 font-black text-[10px] rounded-full">
+                {pallets.filter(p => p.status === 'investigating').length}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Cloud Sync Status Indicator med Manuel Knap */}
@@ -137,8 +196,14 @@ export function App() {
               if (cur.length > 0) {
                 await syncOrdersToCloud(cur);
               }
-              const cloud = await fetchCloudOrders();
+              const [cloud, cloudPallets] = await Promise.all([
+                fetchCloudOrders(),
+                fetchCloudPallets()
+              ]);
               setOrders(cloud);
+              if (cloudPallets && cloudPallets.length > 0) {
+                setPallets(cloudPallets);
+              }
               setIsSyncing(false);
             }}
             className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 px-3 py-1.5 rounded-lg border border-slate-700/60 shadow-sm transition-all"
@@ -169,8 +234,14 @@ export function App() {
               />
             )}
           </div>
-        ) : (
+        ) : currentView === 'management' ? (
           <ManagementDashboard orders={orders} />
+        ) : (
+          <PalletWarehouseView
+            pallets={pallets}
+            onRegisterPallet={handleRegisterPallet}
+            onUpdateStatus={handleUpdatePalletStatus}
+          />
         )}
       </main>
 
