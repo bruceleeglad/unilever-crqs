@@ -7,3 +7,23 @@
   }
 }
 
+@keyframes confettiBurst {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg) scale(0.8);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translate(var(--vx), var(--vy)) rotate(360deg) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--vx) * 1.3), calc(var(--vy) + 70vh)) rotate(720deg) scale(0.5);
+  }
+}
+
+.animate-confetti-fall {
+  animation: confettiBurst 2.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+

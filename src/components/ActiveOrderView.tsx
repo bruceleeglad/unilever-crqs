@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ProductionOrder, CrqsCheck, QualityRating } from '../types/crqs';
 import { CheckModal } from './CheckModal';
+import { SafeConfetti } from './SafeConfetti';
 import { addCheckToOrder, completeOrder } from '../services/storage';
 import { 
   PlusCircle, 
@@ -30,6 +31,7 @@ export const ActiveOrderView: React.FC<Props> = ({
   onNewOrderClick 
 }) => {
   const [showCheckModal, setShowCheckModal] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const [minutesSinceLastCheck, setMinutesSinceLastCheck] = useState<number>(0);
 
   useEffect(() => {
@@ -53,6 +55,7 @@ export const ActiveOrderView: React.FC<Props> = ({
       const updated = addCheckToOrder(order.id, checkData);
       if (updated) {
         onOrderUpdated(updated);
+        setShowConfetti(true);
       }
     } catch (err) {
       console.error('Fejl ved gem tjek:', err);
@@ -285,6 +288,12 @@ export const ActiveOrderView: React.FC<Props> = ({
           onClose={() => setShowCheckModal(false)}
         />
       )}
+
+      {/* Sikker React-native konfetti der aldrig forstyrrer DOM'en på iPad */}
+      <SafeConfetti
+        active={showConfetti}
+        onComplete={() => setShowConfetti(false)}
+      />
     </div>
   );
 };
