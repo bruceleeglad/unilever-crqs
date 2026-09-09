@@ -73,7 +73,19 @@ Enhver almindelig IT-supporter, studerende eller webudvikler kan åbne koden, fo
 
 ---
 
-## 5. Nødprocedure & Fejlfinding (Quick Troubleshooting Guide)
+## 5. Automatiseret AI-Support & Fjernvedligeholdelse (Selv fra Fukuoka)
+
+For at fjerne enhver bekymring om fravær kan der etableres en direkte **AI-Support Mail** (f.eks. `crqs-support@...` eller GitHub Issue integration):
+
+- **Hvordan det fungerer:**
+  1. Hvis en leder eller operatør oplever en fejl eller ønsker en ændring (f.eks. *"Tilføj linje L3"* eller *"Skift feltnavn på etiketter"*), sendes blot en almindelig e-mail med ønsket på dansk.
+  2. Vores AI-udviklingsagent (Google Antigravity / Gemini) kan læse mailen, analysere koden, udføre rettelsen, køre automatiske tests og uploade den opdaterede version til Vercel automatisk.
+  3. Den nye version er live på fabrikkens iPads og PC'er på under 2 minutter — helt uden at nogen behøver at kode manuelt eller være fysisk til stede på fabrikken.
+- **Garanti for uafhængighed:** Chefen behøver derfor hverken bekymre sig om ferie, tidsforskelle eller geografi.
+
+---
+
+## 6. Nødprocedure & Fejlfinding (Quick Troubleshooting Guide)
 
 Skulle der opstå problemer ude på linjen, kan enhver supervisor løse det ved hjælp af følgende tre trin:
 
@@ -81,15 +93,15 @@ Skulle der opstå problemer ude på linjen, kan enhver supervisor løse det ved 
 | :--- | :--- | :--- |
 | **Nye tjek ses ikke på PC'en med det samme** | Netværksudfald eller manglende synkronisering | Tryk på den grønne knap **"Synkroniser"** i øverste højre hjørne på iPad'en eller tryk **F5** på PC'en. |
 | **iPad'en har mistet internetforbindelsen** | Midlertidig WiFi-udfald i hallen | Appen har lokal hukommelse. Tjekket gemmes lokalt på iPad'en og synkroniseres automatisk, så snart forbindelsen er genoprettet. |
-| **Der skal tilføjes en ny linje eller et nyt felt** | Produktionsændring | Koden indeholder en central konfigurationsfil (`src/types/crqs.ts`). Rettelsen laves på 5 minutter og deployes automatisk på under 30 sekunder ved at gemme filen. |
+| **Der skal tilføjes en ny linje eller et nyt felt** | Produktionsændring | Koden indeholder en central konfigurationsfil (`src/types/crqs.ts`). Rettelsen laves på 5 minutter og deployes automatisk på under 30 sekunder ved at gemme filen eller via AI-supportmail. |
 
 ---
 
-## 6. Konklusion & Anbefaling til Ledelsen
+## 7. Konklusion & Anbefaling til Ledelsen
 
 1. **Ingen risiko ved afprøvning:**  
    Det anbefales at fortsætte paralleldrift på **Sif (L2)** i 2-3 uger, mens MachForm forbliver tilgængelig som fallback.
 2. **Økonomisk gevinst:**  
    0 kr. i etablering, 0 kr. i månedlig drift, markant sparet operatørtid ved hvert 20-minutters interval og væsentligt forbedret billedkvalitet ved audits.
-3. **Fuld uafhængighed:**  
-   Ved at overdrage administrationsadgang til Vercel og GitHub til ledelsen er fabrikken 100% sikret – uanset om udvikleren er på fabrikken eller i udlandet.
+3. **Fuld uafhængighed & AI-Support:**  
+   Ved at overdrage administrationsadgang til Vercel/GitHub og have AI-agenten tilkoblet som digital tekniker, er fabrikken 100% sikret – uanset om udvikleren er i Odense eller Fukuoka.
