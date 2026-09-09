@@ -38,10 +38,25 @@ export default async function handler(req, res) {
           })
           .filter((item) => item && item.event === 'message' && item.message);
 
-        // Find den seneste meddelelse, der indeholder ordrer
+        // Find den seneste meddelelse, der indeholder ordrer (enten i .message eller i attachment.url)
         for (let i = lines.length - 1; i >= 0; i--) {
+          const item = lines[i];
+          if (item.attachment && item.attachment.url) {
+            try {
+              const attachRes = await fetch(item.attachment.url);
+              if (attachRes.ok) {
+                const attachJson = await attachRes.json();
+                if (attachJson && Array.isArray(attachJson.orders)) {
+                  return res.status(200).json({ orders: attachJson.orders });
+                }
+              }
+            } catch (err) {
+              console.error('Fetch attachment error:', err);
+            }
+          }
+
           try {
-            const parsed = JSON.parse(lines[i].message);
+            const parsed = JSON.parse(item.message);
             if (parsed && Array.isArray(parsed.orders)) {
               return res.status(200).json({ orders: parsed.orders });
             }
