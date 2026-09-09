@@ -115,6 +115,8 @@ export const LineClearanceForm: React.FC<Props> = ({ onOrderCreated, onCancel })
             </label>
             <input
               type="number"
+              inputMode="numeric"
+              pattern="[0-9]*"
               min="0"
               value={leaktestBottles}
               onChange={(e) => setLeaktestBottles(parseInt(e.target.value) || 0)}
@@ -163,6 +165,8 @@ export const LineClearanceForm: React.FC<Props> = ({ onOrderCreated, onCancel })
               </label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="f.eks. 849201"
                 value={orderNumber}
                 onChange={(e) => setOrderNumber(e.target.value)}
@@ -192,6 +196,8 @@ export const LineClearanceForm: React.FC<Props> = ({ onOrderCreated, onCancel })
               </label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="f.eks. 67890123"
                 value={mrdrProduct}
                 onChange={(e) => setMrdrProduct(e.target.value)}
@@ -208,6 +214,8 @@ export const LineClearanceForm: React.FC<Props> = ({ onOrderCreated, onCancel })
               </label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="f.eks. 201948"
                 value={mrdrFrontLabel}
                 onChange={(e) => setMrdrFrontLabel(e.target.value)}
@@ -224,6 +232,8 @@ export const LineClearanceForm: React.FC<Props> = ({ onOrderCreated, onCancel })
               </label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="f.eks. 201949"
                 value={mrdrBackLabel}
                 onChange={(e) => setMrdrBackLabel(e.target.value)}
@@ -240,6 +250,8 @@ export const LineClearanceForm: React.FC<Props> = ({ onOrderCreated, onCancel })
               </label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="Valgfri"
                 value={mrdrBottles}
                 onChange={(e) => setMrdrBottles(e.target.value)}
@@ -253,6 +265,8 @@ export const LineClearanceForm: React.FC<Props> = ({ onOrderCreated, onCancel })
               </label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="Valgfri"
                 value={mrdrCartonTray}
                 onChange={(e) => setMrdrCartonTray(e.target.value)}
@@ -266,6 +280,8 @@ export const LineClearanceForm: React.FC<Props> = ({ onOrderCreated, onCancel })
               </label>
               <input
                 type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 placeholder="Valgfri"
                 value={mrdrLiquid}
                 onChange={(e) => setMrdrLiquid(e.target.value)}
