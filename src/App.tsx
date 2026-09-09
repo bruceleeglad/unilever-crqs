@@ -122,64 +122,65 @@ export function App() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col selection:bg-blue-600 selection:text-white">
       
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 md:px-8 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      {/* Top Navbar */}
+      <header className="sticky top-0 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-3 sm:px-6 md:px-8 py-2.5 sm:py-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* Unilever CRQS Logo Badge */}
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 via-indigo-600 to-sky-400 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-blue-500/20">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-blue-700 via-indigo-600 to-sky-400 flex items-center justify-center font-black text-white text-base sm:text-lg shadow-lg shadow-blue-500/20 shrink-0">
             U
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-base font-black tracking-tight text-white">Unilever CRQS</span>
-              <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-sm sm:text-base font-black tracking-tight text-white">CRQS</span>
+              <span className="text-[9px] sm:text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30 hidden xs:inline-block">
                 Kvalitet & Lager
               </span>
             </div>
-            <p className="text-xs text-slate-400 hidden sm:block">Line Clearance, 20-min Tjek & Pallelager</p>
+            <p className="text-xs text-slate-400 hidden lg:block">Line Clearance, 20-min Tjek & Pallelager</p>
           </div>
         </div>
 
         {/* Navigation Switch mellem iPad Operatør, Ledelse og Pallelager */}
-        <div className="flex items-center gap-1.5 bg-slate-800/80 p-1 rounded-xl border border-slate-700/80">
+        <div className="flex items-center gap-1 bg-slate-800/90 p-1 rounded-xl border border-slate-700/80 overflow-x-auto scrollbar-none">
           <button
             onClick={() => setCurrentView('operator')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap active:scale-95 ${
               currentView === 'operator'
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Tablet className="w-4 h-4" />
-            <span className="hidden sm:inline">iPad Linje-App</span>
+            <Tablet className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
+            <span className="hidden sm:inline">iPad Linje</span>
             <span className="sm:hidden">Linje</span>
           </button>
 
           <button
             onClick={() => setCurrentView('management')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap active:scale-95 ${
               currentView === 'management'
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <LayoutDashboard className="w-4 h-4" />
+            <LayoutDashboard className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             <span className="hidden sm:inline">Chefer & Audit</span>
             <span className="sm:hidden">Dashboard</span>
           </button>
 
           <button
             onClick={() => setCurrentView('pallets')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all ${
+            className={`flex items-center gap-1 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap active:scale-95 ${
               currentView === 'pallets'
                 ? 'bg-amber-500 text-slate-950 font-black shadow-md shadow-amber-500/30'
                 : 'text-slate-400 hover:text-white'
             }`}
           >
-            <Package className="w-4 h-4" />
+            <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
             <span className="hidden sm:inline">Pallelager</span>
             <span className="sm:hidden">Paller</span>
             {pallets.filter(p => p.status === 'investigating').length > 0 && (
-              <span className="ml-1 px-1.5 py-0.2 bg-amber-400 text-slate-950 font-black text-[10px] rounded-full">
+              <span className="ml-0.5 sm:ml-1 px-1.5 py-0.2 bg-amber-400 text-slate-950 font-black text-[9px] sm:text-[10px] rounded-full">
                 {pallets.filter(p => p.status === 'investigating').length}
               </span>
             )}
@@ -187,7 +188,7 @@ export function App() {
         </div>
 
         {/* Cloud Sync Status Indicator med Manuel Knap */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             type="button"
             onClick={async () => {
@@ -206,7 +207,7 @@ export function App() {
               }
               setIsSyncing(false);
             }}
-            className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 px-3 py-1.5 rounded-lg border border-slate-700/60 shadow-sm transition-all"
+            className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 p-2 sm:px-3 sm:py-1.5 rounded-lg border border-slate-700/60 shadow-sm transition-all active:scale-95"
             title="Synkroniser med skyen nu"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-amber-400' : 'text-emerald-400'}`} />
