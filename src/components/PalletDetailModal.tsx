@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { X, Check, Trash2, Tag, AlertTriangle, CheckCircle, RefreshCw, Calendar, MapPin, Hash, User, FileText } from 'lucide-react';
 import { PalletItem, PalletStatus } from '../types/crqs';
 
@@ -55,8 +55,8 @@ export const PalletDetailModal: React.FC<Props> = ({ pallet, onClose, onUpdateSt
   ];
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 md:p-6 overflow-y-auto">
-      <div className="bg-slate-900 border border-slate-700 w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden my-auto max-h-[94vh] flex flex-col">
+    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-700 w-full max-w-3xl rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] sm:max-h-[94vh] flex flex-col animate-in slide-in-from-bottom duration-200">
         
         {/* Header */}
         <div className="p-4 md:p-5 border-b border-slate-800 bg-slate-800/60 flex items-center justify-between">
@@ -203,11 +203,11 @@ export const PalletDetailModal: React.FC<Props> = ({ pallet, onClose, onUpdateSt
         </div>
 
         {/* Footer */}
-        <div className="p-4 md:p-5 border-t border-slate-800 bg-slate-800/40 flex items-center justify-end gap-3">
+        <div className="p-3.5 sm:p-4 md:p-5 border-t border-slate-800 bg-slate-800/40 flex items-center justify-end gap-2.5 sm:gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 font-semibold text-sm"
+            className="flex-1 sm:flex-none py-3 sm:py-2.5 px-4 sm:px-5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800 font-semibold text-sm active:scale-95 text-center"
           >
             Luk
           </button>
@@ -215,7 +215,7 @@ export const PalletDetailModal: React.FC<Props> = ({ pallet, onClose, onUpdateSt
             type="button"
             disabled={isSaving}
             onClick={handleSave}
-            className="flex items-center gap-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black px-6 py-2.5 rounded-xl shadow-lg shadow-amber-500/20 text-sm transition-all"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black py-3 sm:py-2.5 px-6 rounded-xl shadow-lg shadow-amber-500/20 text-sm transition-all active:scale-95"
           >
             <Check className="w-4 h-4" /> Gem Ændringer
           </button>

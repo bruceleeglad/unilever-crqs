@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Package, Search, Plus, Filter, Download, AlertTriangle, CheckCircle2, Clock, Trash2, ArrowUpRight, Camera, ExternalLink } from 'lucide-react';
 import { PalletItem, PalletStatus } from '../types/crqs';
 import { PalletRegistrationModal } from './PalletRegistrationModal';
@@ -118,30 +118,30 @@ export const PalletWarehouseView: React.FC<Props> = ({ pallets, onRegisterPallet
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-4 md:p-6 pb-24 space-y-6">
+    <div className="max-w-7xl mx-auto p-3 sm:p-4 md:p-6 pb-28 sm:pb-24 space-y-4 sm:space-y-6">
       
       {/* Top Banner & Handlinger */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 md:p-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 md:p-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-black tracking-wide bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-black tracking-wide bg-amber-500/20 text-amber-400 border border-amber-500/30 uppercase">
               Skyggelager & Karantæne
             </span>
-            <span className="text-xs text-slate-400">• TCO: 0 kr.</span>
+            <span className="text-[11px] text-slate-400">• TCO: 0 kr.</span>
           </div>
           <h1 className="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-            <Package className="w-6 h-6 text-amber-400" />
+            <Package className="w-6 h-6 text-amber-400 shrink-0" />
             Paller Udenfor SAP
           </h1>
           <p className="text-xs md:text-sm text-slate-400 mt-1 max-w-2xl">
-            Registrér og hold styr på paller med udgåede varenumre, manglende SAP-data eller ukendt status direkte fra lagerets iPad eller driftschefens PC.
+            Registrér og hold styr på paller med udgåede varenumre, ukendt status eller paller der afventer ommærkning.
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={exportToCSV}
-            className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-4 py-3 rounded-xl border border-slate-700 shadow-md text-xs md:text-sm transition-all"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 font-bold px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-xl border border-slate-700 shadow-md text-xs md:text-sm transition-all"
             title="Eksportér alle registrerede paller til CSV / Excel"
           >
             <Download className="w-4 h-4 text-emerald-400" />
@@ -150,7 +150,7 @@ export const PalletWarehouseView: React.FC<Props> = ({ pallets, onRegisterPallet
 
           <button
             onClick={() => setShowRegisterModal(true)}
-            className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black px-5 py-3 rounded-xl shadow-lg shadow-amber-500/20 text-xs md:text-sm transition-all"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 active:scale-95 text-slate-950 font-black px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl shadow-lg shadow-amber-500/20 text-xs md:text-sm transition-all"
           >
             <Plus className="w-4 h-4" />
             <span>Registrer Palle</span>
@@ -158,78 +158,79 @@ export const PalletWarehouseView: React.FC<Props> = ({ pallets, onRegisterPallet
         </div>
       </div>
 
-      {/* KPI Kasser */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-4">
+      {/* KPI Kasser (Kompakt og hurtigt overblik) */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 md:gap-4">
         <div 
           onClick={() => setStatusFilter('all')}
-          className={`cursor-pointer p-4 rounded-xl border transition-all ${
+          className={`cursor-pointer p-3 sm:p-4 rounded-xl border transition-all active:scale-98 ${
             statusFilter === 'all' 
               ? 'bg-slate-800 border-slate-600 ring-2 ring-white/20' 
               : 'bg-slate-900/80 border-slate-800/80 hover:bg-slate-800/50'
           }`}
         >
-          <span className="text-slate-400 text-xs font-semibold uppercase tracking-wider block">Paller i Alt</span>
-          <span className="text-2xl md:text-3xl font-black text-white mt-1 block">{stats.total}</span>
+          <span className="text-slate-400 text-[11px] sm:text-xs font-semibold uppercase tracking-wider block">Paller i Alt</span>
+          <span className="text-xl sm:text-2xl md:text-3xl font-black text-white mt-0.5 sm:mt-1 block">{stats.total}</span>
         </div>
 
         <div 
           onClick={() => setStatusFilter('investigating')}
-          className={`cursor-pointer p-4 rounded-xl border transition-all ${
+          className={`cursor-pointer p-3 sm:p-4 rounded-xl border transition-all active:scale-98 ${
             statusFilter === 'investigating' 
               ? 'bg-amber-950/40 border-amber-500 ring-2 ring-amber-500/30' 
               : 'bg-slate-900/80 border-slate-800/80 hover:bg-slate-800/50'
           }`}
         >
-          <span className="text-amber-400 text-xs font-semibold uppercase tracking-wider block">Afventer Afklaring</span>
-          <span className="text-2xl md:text-3xl font-black text-amber-300 mt-1 block">{stats.investigating}</span>
+          <span className="text-amber-400 text-[11px] sm:text-xs font-semibold uppercase tracking-wider block truncate">Afventer</span>
+          <span className="text-xl sm:text-2xl md:text-3xl font-black text-amber-300 mt-0.5 sm:mt-1 block">{stats.investigating}</span>
         </div>
 
         <div 
           onClick={() => setStatusFilter('ready_relabel')}
-          className={`cursor-pointer p-4 rounded-xl border transition-all ${
+          className={`cursor-pointer p-3 sm:p-4 rounded-xl border transition-all active:scale-98 ${
             statusFilter === 'ready_relabel' 
               ? 'bg-blue-950/40 border-blue-500 ring-2 ring-blue-500/30' 
               : 'bg-slate-900/80 border-slate-800/80 hover:bg-slate-800/50'
           }`}
         >
-          <span className="text-blue-400 text-xs font-semibold uppercase tracking-wider block">Klar til Ommærkning</span>
-          <span className="text-2xl md:text-3xl font-black text-blue-300 mt-1 block">{stats.readyRelabel}</span>
+          <span className="text-blue-400 text-[11px] sm:text-xs font-semibold uppercase tracking-wider block truncate">Ommærkning</span>
+          <span className="text-xl sm:text-2xl md:text-3xl font-black text-blue-300 mt-0.5 sm:mt-1 block">{stats.readyRelabel}</span>
         </div>
 
         <div 
           onClick={() => setStatusFilter('scrap')}
-          className={`cursor-pointer p-4 rounded-xl border transition-all ${
+          className={`cursor-pointer p-3 sm:p-4 rounded-xl border transition-all active:scale-98 ${
             statusFilter === 'scrap' 
               ? 'bg-rose-950/40 border-rose-500 ring-2 ring-rose-500/30' 
               : 'bg-slate-900/80 border-slate-800/80 hover:bg-slate-800/50'
           }`}
         >
-          <span className="text-rose-400 text-xs font-semibold uppercase tracking-wider block">Til Skrotning</span>
-          <span className="text-2xl md:text-3xl font-black text-rose-400 mt-1 block">{stats.scrap}</span>
+          <span className="text-rose-400 text-[11px] sm:text-xs font-semibold uppercase tracking-wider block truncate">Skrot</span>
+          <span className="text-xl sm:text-2xl md:text-3xl font-black text-rose-400 mt-0.5 sm:mt-1 block">{stats.scrap}</span>
         </div>
       </div>
 
-      {/* Søge- og Filterbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900 p-3 md:p-4 rounded-xl border border-slate-800">
-        <div className="relative flex-1 min-w-[240px]">
+      {/* Søge- og Filterbar med touch-scroller */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 bg-slate-900 p-2.5 sm:p-3 md:p-4 rounded-xl border border-slate-800">
+        <div className="relative flex-1">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Søg pallenr, lokation (f.eks. B-12), gammelt varenummer, indhold..."
+            placeholder="Søg pallenr, lokation (f.eks. B-12), MRDR..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-slate-800/90 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-xs md:text-sm text-white focus:ring-2 focus:ring-amber-500 outline-none"
+            className="w-full bg-slate-800/90 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-base sm:text-xs md:text-sm text-white focus:ring-2 focus:ring-amber-500 outline-none"
           />
         </div>
 
-        <div className="flex items-center gap-1.5 overflow-x-auto">
+        {/* Filter chips med let swipe på mobil */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none -mx-1 px-1">
           {(['all', 'investigating', 'ready_relabel', 'scrap', 'resolved'] as const).map((st) => (
             <button
               key={st}
               onClick={() => setStatusFilter(st)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+              className={`px-3 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap active:scale-95 ${
                 statusFilter === st
-                  ? 'bg-amber-500 text-slate-950 shadow'
+                  ? 'bg-amber-500 text-slate-950 shadow font-black'
                   : 'bg-slate-800 text-slate-400 hover:text-white'
               }`}
             >
@@ -245,7 +246,7 @@ export const PalletWarehouseView: React.FC<Props> = ({ pallets, onRegisterPallet
 
       {/* Pallelager Liste / Tabel */}
       {filteredPallets.length === 0 ? (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 sm:p-12 text-center">
           <Package className="w-12 h-12 text-slate-600 mx-auto mb-3" />
           <h3 className="text-base font-bold text-white mb-1">Ingen paller fundet</h3>
           <p className="text-xs text-slate-400 max-w-sm mx-auto mb-5">
@@ -255,7 +256,7 @@ export const PalletWarehouseView: React.FC<Props> = ({ pallets, onRegisterPallet
           </p>
           <button
             onClick={() => setShowRegisterModal(true)}
-            className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-5 py-2.5 rounded-xl text-xs"
+            className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black px-5 py-3 rounded-xl text-sm shadow-lg shadow-amber-500/20"
           >
             <Plus className="w-4 h-4" /> Registrer Første Palle Nu
           </button>
@@ -358,6 +359,17 @@ export const PalletWarehouseView: React.FC<Props> = ({ pallets, onRegisterPallet
           }}
         />
       )}
+
+      {/* Floating Action Button (FAB) kun synlig på mobil for nem tommelfinger-adgang */}
+      <div className="fixed bottom-6 right-4 sm:hidden z-30">
+        <button
+          onClick={() => setShowRegisterModal(true)}
+          className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 active:scale-95 text-slate-950 font-black px-4 py-3.5 rounded-full shadow-2xl shadow-amber-500/50 border-2 border-amber-400 text-sm"
+        >
+          <Plus className="w-5 h-5 stroke-[3]" />
+          <span>Ny Palle</span>
+        </button>
+      </div>
 
     </div>
   );
