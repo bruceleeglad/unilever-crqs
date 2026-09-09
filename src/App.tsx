@@ -64,21 +64,42 @@ export function App() {
 
     loadFromCloud();
 
-    // Polling hvert 5. sekund så ændringer opdaterer automatisk i realtid
+    // Smart Cloud Polling: Kun når fanen er aktiv/synlig, og med 45 sekunders interval for at minimere serverless båndbredde
     const pollInterval = setInterval(async () => {
-      const [cloudData, cloudPallets] = await Promise.all([
-        fetchCloudOrders(),
-        fetchCloudPallets()
-      ]);
-      if (cloudData && cloudData.length > 0) {
-        setOrders(cloudData);
+      if (document.hidden) return; // Pauser fuldstændigt når iPad/PC skærmen er slukket eller i baggrunden
+      try {
+        const [cloudData, cloudPallets] = await Promise.all([
+          fetchCloudOrders(),
+          fetchCloudPallets()
+        ]);
+        if (cloudData && cloudData.length > 0) {
+          setOrders(cloudData);
+        }
+        if (cloudPallets && cloudPallets.length > 0) {
+          setPallets(cloudPallets);
+        }
+      } catch (err) {
+        console.warn('Sync poll error:', err);
       }
-      if (cloudPallets && cloudPallets.length > 0) {
-        setPallets(cloudPallets);
-      }
-    }, 5000);
+    }, 45000); // 45 sekunder i stedet for 5 sekunder sparer 90% båndbredde!
 
-    return () => clearInterval(pollInterval);
+    // Gen-synkroniser lynhurtigt i samme sekund brugeren åbner fanen igen
+    const handleVisibilityChange = async () => {
+      if (!document.hidden) {
+        const [cloudData, cloudPallets] = await Promise.all([
+          fetchCloudOrders(),
+          fetchCloudPallets()
+        ]);
+        if (cloudData && cloudData.length > 0) setOrders(cloudData);
+        if (cloudPallets && cloudPallets.length > 0) setPallets(cloudPallets);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(pollInterval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const activeOrder = orders.find(o => o.id === activeOrderId);
